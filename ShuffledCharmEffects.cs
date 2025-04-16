@@ -8,7 +8,7 @@ using Satchel;
 namespace ShuffledCharmEffects {
     public class ShuffledCharmEffects: Mod, ILocalSettings<LocalSettings> {
         new public string GetName() => "ShuffledCharmEffects";
-        public override string GetVersion() => "1.0.0.0";
+        public override string GetVersion() => "1.0.0.1";
 
         public static LocalSettings localData { get; set; } = new();
         public void OnLoadLocal(LocalSettings s) => localData = s;
@@ -24,7 +24,9 @@ namespace ShuffledCharmEffects {
             if(boolName.StartsWith("equippedCharm_")) {
                 if(!Environment.StackTrace.Contains("CalculateNotchesUsed")) {
                     int origID = int.Parse(boolName.Split('_')[1]);
-                    boolName = "equippedCharm_" + localData.shuffledIDs[origID - 1];
+                    if(origID <= 40) {
+                        boolName = "equippedCharm_" + localData.shuffledIDs[origID - 1];
+                    }
                 }
             }
             return orig(self, boolName);
@@ -69,7 +71,11 @@ namespace ShuffledCharmEffects {
 
         public override void OnEnter() {
             string fsmString = fsm.FsmVariables.GetFsmString("Item Num String").Value;
-            int revertedID = ShuffledCharmEffects.localData.shuffledIDs.IndexOf(int.Parse(fsmString)) + 1;
+            int currentID = int.Parse(fsmString);
+            int revertedID = currentID;
+            if(currentID <= 40) {
+                revertedID = ShuffledCharmEffects.localData.shuffledIDs.IndexOf(currentID) + 1;
+            }
             fsm.FsmVariables.GetFsmString("PlayerData Var Name").Value = "equippedCharm_" + revertedID;
         }
     }
