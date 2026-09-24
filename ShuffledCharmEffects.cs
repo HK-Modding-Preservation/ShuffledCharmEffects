@@ -9,20 +9,29 @@ using Satchel;
 namespace ShuffledCharmEffects {
     public class ShuffledCharmEffects: Mod, ILocalSettings<LocalSettings> {
         new public string GetName() => "ShuffledCharmEffects";
-        public override string GetVersion() => "1.1.0.0";
+        public override string GetVersion() => "1.1.0.1";
         public override int LoadPriority() => -3;
 
         public static LocalSettings localData { get; set; } = new();
         public void OnLoadLocal(LocalSettings s) => localData = s;
         public LocalSettings OnSaveLocal() => localData;
 
+        private bool isCalculatingNotches = false;
+
         public override void Initialize(Dictionary<string, Dictionary<string, GameObject>> preloadedObjects) {
             On.PlayerData.GetBool += getBoolRecharm;
             On.PlayMakerFSM.OnEnable += editFsm;
             On.GameManager.StartNewGame += onStartGame;
+            On.PlayerData.CalculateNotchesUsed += FlagCalculateNotches;
             if(ModHooks.GetMod("Randomizer 4") is Mod) {
                 initializeForRando();
             }
+        }
+
+        private void FlagCalculateNotches(On.PlayerData.orig_CalculateNotchesUsed orig, PlayerData self) {
+            isCalculatingNotches = true;
+            orig(self);
+            isCalculatingNotches = false;
         }
 
         private void initializeForRando() {
@@ -30,7 +39,7 @@ namespace ShuffledCharmEffects {
         }
 
         private bool getBoolRecharm(On.PlayerData.orig_GetBool orig, PlayerData self, string boolName) {
-            if(boolName.StartsWith("equippedCharm_") && !Environment.StackTrace.Contains("CalculateNotchesUsed")) {
+            if(!isCalculatingNotches && boolName.StartsWith("equippedCharm_")) {
                 int origID = int.Parse(boolName.Split('_')[1]);
                 try {
                     return orig(self, "equippedCharm_" + localData.shuffledIDs[origID - 1]);
